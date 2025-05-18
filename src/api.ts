@@ -574,6 +574,8 @@ export function LogVerbose(self: ResiStudioInstance, message: string): void {
 // --- Error Handling ---
 
 function parseErrorResponse(self: ResiStudioInstance, response: Response): string {
+	self.log('error', `Error: ${response.status} ${response.statusText}`)
+
 	switch (response.status) {
 		case 400:
 			return 'Bad Request: Check your input values.'
@@ -608,6 +610,7 @@ function AddEncoderError(self: ResiStudioInstance, encoderId: string, errorMessa
 	variableObj.encoderErrorStatus = errorMessage
 	self.setVariableValues(variableObj) // Set the variable value for the error message
 }
+
 function ClearEncoderError(self: ResiStudioInstance, encoderId: string): void {
 	self.ENCODERS_WITH_ERRORS = self.ENCODERS_WITH_ERRORS.filter((error) => error.encoderId !== encoderId)
 	self.checkFeedbacks() // Check feedbacks after clearing the error
