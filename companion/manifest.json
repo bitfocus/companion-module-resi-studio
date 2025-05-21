@@ -2,8 +2,8 @@
 	"id": "resi-studio",
 	"name": "resi-studio",
 	"shortname": "resi-studio",
-	"description": "Run scripts remotely on other computers",
-	"version": "0.0.0",
+	"description": "Control Resi Studio and start a resilient stream.",
+	"version": "1.0.2",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-resi-studio.git",
 	"bugs": "https://github.com/bitfocus/companion-module-resi-studio/issues",
@@ -22,5 +22,5 @@
 	},
 	"manufacturer": "Resi",
 	"products": ["Studio"],
-	"keywords": ["encoder", "decoder", "living as one"]
+	"keywords": ["encoder", "living as one", "live", "streaming", "pushpay"]
 }

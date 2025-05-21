@@ -17,7 +17,7 @@ export class ResiStudioInstance extends InstanceBase<ModuleConfig> {
 	SCHEDULE_IDS: Schedule[] = [] // List of schedule IDs fetched from the API
 
 	POLLING_INTERVAL: NodeJS.Timeout | undefined = undefined // Interval for fetching data from the API
-	POLLING_RATE: number = 10000 // Default polling rate
+	POLLING_RATE: number = 60000 // Default polling rate of 60 seconds
 	POLLING_RUNNING: boolean = false // Flag to indicate if polling is running
 
 	ENCODERS_WITH_ERRORS: { encoderId: string; errorMessage: string }[] = [] // List of encoders with errors

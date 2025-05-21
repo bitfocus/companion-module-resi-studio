@@ -120,7 +120,7 @@ async function CheckTokenExpiry(self: ResiStudioInstance): Promise<boolean> {
 
 async function Poll(self: ResiStudioInstance) {
 	while (true) {
-		await GetEncoders(self)
+		//await GetEncoders(self)
 		await GetDestinationGroups(self)
 
 		for (const schedule of self.SCHEDULE_IDS) {
@@ -363,34 +363,38 @@ export async function GoLive(
 
 		ClearEncoderError(self, encoderId)
 
-		const data = (await response.json()) as Response
+		try {
+			const scheduleIdLocation = response.headers.get('location')
+			LogVerbose(self, `Schedule Id Location: ${scheduleIdLocation}`)
+			//remove everything before the last slash
+			if (scheduleIdLocation) {
+				const parts = scheduleIdLocation.split('/')
+				const scheduleId = parts[parts.length - 1]
+				self.log('info', `Schedule ID: ${scheduleId}`)
 
-		const scheduleIdLocation = data.headers.get('location')
-		LogVerbose(self, `Schedule Id Location: ${scheduleIdLocation}`)
-		//remove everything before the last slash
-		if (scheduleIdLocation) {
-			const parts = scheduleIdLocation.split('/')
-			const scheduleId = parts[parts.length - 1]
-			self.log('info', `Schedule ID: ${scheduleId}`)
+				//store the encoder id and schedule id in an array for the instance
+				let scheduleIdObj: Schedule = {
+					encoderId: encoderId,
+					scheduleId: scheduleId,
+					scheduleIdLocation: scheduleIdLocation,
+					destinationGroupId: destinationGroupId,
+				}
 
-			//store the encoder id and schedule id in an array for the instance
-			let scheduleIdObj: Schedule = {
-				encoderId: encoderId,
-				scheduleId: scheduleId,
-				scheduleIdLocation: scheduleIdLocation,
-				destinationGroupId: destinationGroupId,
+				self.SCHEDULE_IDS.push(scheduleIdObj)
+
+				//save to the config also
+				self.config.SCHEDULE_IDS = self.SCHEDULE_IDS
+				self.saveConfig(self.config)
+
+				//now that we know the schedule ID, we can fetch the schedule on an interval, however the schedule will not be available immediately, so we will not fetch it here
+			} else {
+				self.log('error', 'Schedule ID is not available in the response headers.')
 			}
-
-			self.SCHEDULE_IDS.push(scheduleIdObj)
-
-			//save to the config also
-			self.config.SCHEDULE_IDS = self.SCHEDULE_IDS
-			self.saveConfig(self.config)
-
-			//now that we know the schedule ID, we can fetch the schedule on an interval, however the schedule will not be available immediately, so we will not fetch it here
-		} else {
-			self.log('error', 'Schedule ID is not available in the response headers.')
 		}
+		catch(err) {
+			self.log('error', `Error: ${err}`)
+		}
+		
 
 		LogVerbose(self, `Response: ${response.status} ${response.statusText}`)
 		self.log(
@@ -399,6 +403,8 @@ export async function GoLive(
 		)
 	} catch (error: any) {
 		self.updateStatus(InstanceStatus.ConnectionFailure, 'Failed to start Encoder - see log for details')
+		LogVerbose(self, `Error: ${error.message || error}`)
+		console.log(error)
 	} finally {
 		//GetSchedules(self)
 	}
@@ -576,6 +582,23 @@ export function LogVerbose(self: ResiStudioInstance, message: string): void {
 function parseErrorResponse(self: ResiStudioInstance, response: Response): string {
 	self.log('error', `Error: ${response.status} ${response.statusText}`)
 
+	//log API url
+	const apiUrl = response.url
+	if (apiUrl) {
+		self.log('debug', `API URL: ${apiUrl}`)
+	}
+
+	//log x-request-id header if it exists
+	const requestId = response.headers.get('x-request-id')
+	if (requestId) {
+		self.log('debug', `x-request-id: ${requestId}`)
+	}
+
+	//log response body
+	response.text().then((text) => {
+		self.log('debug', `Response body: ${text}`)
+	})
+
 	switch (response.status) {
 		case 400:
 			return 'Bad Request: Check your input values.'
@@ -589,6 +612,10 @@ function parseErrorResponse(self: ResiStudioInstance, response: Response): strin
 			return 'Not Found: The requested resource does not exist.'
 		case 409:
 			return 'Conflict: Encoder may already be live or there is an overlapping schedule.'
+		case 429:
+			return 'Too Many Requests: Rate limit exceeded. Please try again later.'
+		case 520:
+			return 'Error 520: The server encountered an unexpected condition.'
 		default:
 			return `Unexpected error: ${response.status} ${response.statusText}`
 	}
