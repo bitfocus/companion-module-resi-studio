@@ -154,8 +154,10 @@ async function GetEncoders(self: ResiStudioInstance): Promise<void> {
 	if (await !CheckTokenExpiry(self)) return
 
 	try {
-		const apiEncodersUrl = `${API_BASE_URL}/${API_VERSION}/encoders`
+		const apiEncodersUrl = `${API_BASE_URL}/${API_VERSION}/encoders?hardwareOnly=true`
 		LogVerbose(self, `Retrieving Encoders from: ${apiEncodersUrl}`)
+
+		await waitUntilOkToRequest(self)
 
 		const response = await fetch(apiEncodersUrl, {
 			method: 'GET',
@@ -164,6 +166,8 @@ async function GetEncoders(self: ResiStudioInstance): Promise<void> {
 				Authorization: `Bearer ${self.TOKEN}`,
 			},
 		})
+
+		logRequest(self)
 
 		if (!response.ok) {
 			const errorMessage = parseErrorResponse(self, response)
@@ -206,6 +210,8 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 		const apiDestinationsUrl = `${API_BASE_URL}/${API_VERSION}/destinationgroups`
 		LogVerbose(self, `Retrieving Destination Groups from: ${apiDestinationsUrl}`)
 
+		await waitUntilOkToRequest(self)
+
 		const response = await fetch(apiDestinationsUrl, {
 			method: 'GET',
 			headers: {
@@ -213,6 +219,8 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 				Authorization: `Bearer ${self.TOKEN}`,
 			},
 		})
+
+		logRequest(self)
 
 		if (!response.ok) {
 			const errorMessage = parseErrorResponse(self, response)
@@ -257,6 +265,9 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 	try {
 		const apiDestinationsUrl = `${API_BASE_URL}/${API_VERSION}/destinationgroups/${destinationGroupId}`
 		LogVerbose(self, `Fetching destination group info from: ${apiDestinationsUrl}`)
+
+		await waitUntilOkToRequest(self)
+
 		const response = await fetch(apiDestinationsUrl, {
 			method: 'GET',
 			headers: {
@@ -264,6 +275,9 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 				Authorization: `Bearer ${self.TOKEN}`,
 			},
 		})
+
+		logRequest(self)
+
 		if (!response.ok) {
 			self.log('error', `Failed to fetch destination group info: ${response.statusText}`)
 			//self.updateStatus(InstanceStatus.ConnectionFailure, 'Failed to fetch destination group info - see log for details')
@@ -285,6 +299,9 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 	try {
 		const apiDestinationsUrl = `${API_BASE_URL}/${API_VERSION}/destinations/${destinationId}`
 		LogVerbose(self, `Fetching destination info from: ${apiDestinationsUrl}`)
+
+		await waitUntilOkToRequest(self)
+
 		const response = await fetch(apiDestinationsUrl, {
 			method: 'GET',
 			headers: {
@@ -292,6 +309,9 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 				Authorization: `Bearer ${self.TOKEN}`,
 			},
 		})
+
+		logRequest(self)
+
 		if (!response.ok) {
 			self.log('error', `Failed to fetch destination info: ${response.statusText}`)
 			//self.updateStatus(InstanceStatus.ConnectionFailure, 'Failed to fetch destination info - see log for details')
@@ -342,6 +362,8 @@ export async function GoLive(
 		const apiStartEncoderUrl = `${API_BASE_URL}/${API_VERSION}/schedules/live`
 		LogVerbose(self, `Going Live: Using API URL: ${apiStartEncoderUrl}`)
 
+		await waitUntilOkToRequest(self)
+
 		const response = await fetch(apiStartEncoderUrl, {
 			method: 'POST',
 			headers: {
@@ -351,11 +373,15 @@ export async function GoLive(
 			body: JSON.stringify({ encoderId, destinationGroupId, title, description }),
 		})
 
+		logRequest(self)
+
 		if (!response.ok) {
-			const errorMessage = parseErrorResponse(self, response)
-			self.log('error', errorMessage)
 			const body = await response.text()
 			LogVerbose(self, `Response body: ${body}`)
+
+			const errorMessage = parseErrorResponse(self, response, body)
+			self.log('error', errorMessage)
+
 			AddEncoderError(self, encoderId, errorMessage)
 			self.updateStatus(InstanceStatus.UnknownWarning, errorMessage)
 			return
@@ -387,6 +413,7 @@ export async function GoLive(
 				self.saveConfig(self.config)
 
 				//now that we know the schedule ID, we can fetch the schedule on an interval, however the schedule will not be available immediately, so we will not fetch it here
+				StartFastPollingSchedule(self, scheduleId)
 			} else {
 				self.log('error', 'Schedule ID is not available in the response headers.')
 			}
@@ -446,6 +473,8 @@ export async function StopLive(self: ResiStudioInstance, encoderId: string, dest
 		const apiStopEncoderUrl = `${API_BASE_URL}/${API_VERSION}/schedules/${scheduleId}/stop`
 		LogVerbose(self, `Using API URL: ${apiStopEncoderUrl}`)
 
+		await waitUntilOkToRequest(self)
+
 		const response = await fetch(apiStopEncoderUrl, {
 			method: 'POST',
 			headers: {
@@ -453,6 +482,8 @@ export async function StopLive(self: ResiStudioInstance, encoderId: string, dest
 				Authorization: `Bearer ${self.TOKEN}`,
 			},
 		})
+
+		logRequest(self)
 
 		if (response.ok) {
 			self.log(
@@ -498,6 +529,9 @@ export async function GetSchedule(self: ResiStudioInstance, schedule: Schedule):
 		const apiSchedulesUrl = `${API_BASE_URL}/${API_VERSION}/schedules/${scheduleId}`
 
 		LogVerbose(self, `Retrieving Schedule from: ${apiSchedulesUrl}`)
+
+		await waitUntilOkToRequest(self)
+
 		const response = await fetch(apiSchedulesUrl, {
 			method: 'GET',
 			headers: {
@@ -505,6 +539,9 @@ export async function GetSchedule(self: ResiStudioInstance, schedule: Schedule):
 				Authorization: `Bearer ${self.TOKEN}`,
 			},
 		})
+
+		logRequest(self)
+
 		LogVerbose(self, `Response: ${response.status} ${response.statusText}`)
 		if (!response.ok) {
 			// Handle specific error codes
@@ -579,7 +616,7 @@ export function LogVerbose(self: ResiStudioInstance, message: string): void {
 
 // --- Error Handling ---
 
-function parseErrorResponse(self: ResiStudioInstance, response: Response): string {
+function parseErrorResponse(self: ResiStudioInstance, response: Response, body?: string): string {
 	self.log('error', `Error: ${response.status} ${response.statusText}`)
 
 	//log API url
@@ -595,9 +632,9 @@ function parseErrorResponse(self: ResiStudioInstance, response: Response): strin
 	}
 
 	//log response body
-	response.text().then((text) => {
-		self.log('debug', `Response body: ${text}`)
-	})
+	if (body) {
+		self.log('debug', `Response body: ${body}`)
+	}
 
 	switch (response.status) {
 		case 400:
@@ -645,4 +682,77 @@ function ClearEncoderError(self: ResiStudioInstance, encoderId: string): void {
 	const variableObj = {} as any
 	variableObj.encoderErrorStatus = ''
 	self.setVariableValues(variableObj) // Set the variable value for the error message
+}
+
+const REQUEST_LIMIT = 10
+const TIME_WINDOW_MS = 60_000 // 1 minute
+
+export async function waitUntilOkToRequest(self: ResiStudioInstance): Promise<void> {
+	if (!self.requestLog) {
+		self.requestLog = []
+	}
+
+	while (true) {
+		const now = Date.now()
+
+		// Remove entries older than the window
+		self.requestLog = self.requestLog.filter((timestamp) => now - timestamp < TIME_WINDOW_MS)
+
+		if (self.requestLog.length < REQUEST_LIMIT) {
+			LogVerbose(self, `Request allowed: ${self.requestLog.length} requests in the last ${TIME_WINDOW_MS / 1000} seconds`)
+			return
+		}
+
+		LogVerbose(self, `Request limit reached: ${self.requestLog.length} requests in the last ${TIME_WINDOW_MS / 1000} seconds`)
+
+		// Wait before checking again
+		await new Promise((resolve) => setTimeout(resolve, 1000))
+	}
+}
+
+export function logRequest(self: ResiStudioInstance): void {
+	if (!self.requestLog) {
+		self.requestLog = []
+	}
+	self.requestLog.push(Date.now())
+}
+
+function StartFastPollingSchedule(self: ResiStudioInstance, scheduleId: string): void {
+	if (!self.FAST_POLLING) self.FAST_POLLING = {}
+	if (self.FAST_POLLING[scheduleId]) return
+
+	let retryCount = 0
+	const maxRetries = 20
+	const pollDelay = 3000
+
+	async function pollOnce() {
+		const schedule = self.SCHEDULE_IDS.find((s) => s.scheduleId === scheduleId)
+		if (!schedule) {
+			delete self.FAST_POLLING[scheduleId]
+			return
+		}
+
+		retryCount++
+		await GetSchedule(self, schedule)
+
+		if (
+			(schedule.destinations?.length ?? 0) > 0 &&
+			schedule.destinations?.every((d) => d.status === 'STARTED')
+		) {
+			self.log('info', `Schedule ${scheduleId} fully started. Stopping fast polling.`)
+			delete self.FAST_POLLING[scheduleId]
+			return
+		}
+
+		if (retryCount >= maxRetries) {
+			self.log('warn', `Fast polling for Schedule ${scheduleId} timed out.`)
+			delete self.FAST_POLLING[scheduleId]
+			return
+		}
+
+		// Schedule next poll
+		self.FAST_POLLING[scheduleId] = setTimeout(pollOnce, pollDelay)
+	}
+
+	self.FAST_POLLING[scheduleId] = setTimeout(pollOnce, pollDelay)
 }

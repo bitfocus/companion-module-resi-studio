@@ -22,12 +22,20 @@ export class ResiStudioInstance extends InstanceBase<ModuleConfig> {
 
 	ENCODERS_WITH_ERRORS: { encoderId: string; errorMessage: string }[] = [] // List of encoders with errors
 
+	requestLog: number[]
+
+	FAST_POLLING: Record<string, NodeJS.Timeout> = {} // Fast polling for specific encoders that have gone live
+
 	constructor(internal: unknown) {
 		super(internal)
 
 		//populate choices_encoders with a default value
 		this.CHOICES_ENCODERS = [{ id: 'default', label: 'Default Encoder' }]
 		this.CHOICES_DESTINATION_GROUPS = [{ id: 'default', label: 'Default Destination Group' }]
+
+		this.SCHEDULE_IDS = [] // Initialize schedule IDs
+
+		this.requestLog = []
 	}
 
 	async init(config: ModuleConfig): Promise<void> {

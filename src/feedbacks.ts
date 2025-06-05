@@ -4,9 +4,9 @@ import type { ResiStudioInstance } from './main.js'
 export function UpdateFeedbacks(self: ResiStudioInstance): void {
 	const feedbacks: CompanionFeedbackDefinitions = {}
 
-	feedbacks.allDestinationsGood = {
+	feedbacks.destinationStatus = {
 		name: 'Show Go Live Status for All Destinations',
-		description: 'If all destinations for the encoder are "STARTED", show the feedback',
+		description: 'If all destinations for the encoder match the selected state, show the feedback',
 		type: 'boolean',
 		options: [
 			{
@@ -23,6 +23,18 @@ export function UpdateFeedbacks(self: ResiStudioInstance): void {
 				default: self.CHOICES_DESTINATION_GROUPS[0].id,
 				choices: self.CHOICES_DESTINATION_GROUPS,
 			},
+			{
+				type: 'dropdown',
+				label: 'State',
+				id: 'state',
+				default: 'STARTED',
+				choices: [
+					{ id: 'SET_UP', label: 'Setting Up' },
+					{ id: 'STARTING', label: 'Starting' },
+					{ id: 'STARTED', label: 'Started' },
+					{ id: 'ABORTED', label: 'Aborted' },
+				],
+			},
 		],
 		defaultStyle: {
 			color: combineRgb(255, 255, 255), // White text
@@ -35,7 +47,7 @@ export function UpdateFeedbacks(self: ResiStudioInstance): void {
 				(s) => s.encoderId === encoderId && s.destinationGroupId === destinationGroupId,
 			)
 			if (schedule) {
-				const allDestinationsStarted = schedule.destinations?.every((destination) => destination.status === 'STARTED')
+				const allDestinationsStarted = schedule.destinations?.every((destination) => destination.status === feedback.options.state)
 				return allDestinationsStarted ?? false
 			}
 			// If encoder not found, return false

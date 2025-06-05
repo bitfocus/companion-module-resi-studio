@@ -54,7 +54,7 @@ export function UpdateActions(self: ResiStudioInstance): void {
 
 	actions.stopLive = {
 		name: 'Stop Live',
-		description: 'Stops the Current Live Stream that was started from this module',
+		description: '',
 		options: [
 			{
 				type: 'dropdown',
