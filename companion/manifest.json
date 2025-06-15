@@ -3,7 +3,7 @@
 	"name": "resi-studio",
 	"shortname": "resi-studio",
 	"description": "Control Resi Studio and start a resilient stream.",
-	"version": "1.0.2",
+	"version": "1.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-resi-studio.git",
 	"bugs": "https://github.com/bitfocus/companion-module-resi-studio/issues",
