@@ -417,11 +417,9 @@ export async function GoLive(
 			} else {
 				self.log('error', 'Schedule ID is not available in the response headers.')
 			}
-		}
-		catch(err) {
+		} catch (err) {
 			self.log('error', `Error: ${err}`)
 		}
-		
 
 		LogVerbose(self, `Response: ${response.status} ${response.statusText}`)
 		self.log(
@@ -699,11 +697,17 @@ export async function waitUntilOkToRequest(self: ResiStudioInstance): Promise<vo
 		self.requestLog = self.requestLog.filter((timestamp) => now - timestamp < TIME_WINDOW_MS)
 
 		if (self.requestLog.length < REQUEST_LIMIT) {
-			LogVerbose(self, `Request allowed: ${self.requestLog.length} requests in the last ${TIME_WINDOW_MS / 1000} seconds`)
+			LogVerbose(
+				self,
+				`Request allowed: ${self.requestLog.length} requests in the last ${TIME_WINDOW_MS / 1000} seconds`,
+			)
 			return
 		}
 
-		LogVerbose(self, `Request limit reached: ${self.requestLog.length} requests in the last ${TIME_WINDOW_MS / 1000} seconds`)
+		LogVerbose(
+			self,
+			`Request limit reached: ${self.requestLog.length} requests in the last ${TIME_WINDOW_MS / 1000} seconds`,
+		)
 
 		// Wait before checking again
 		await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -735,10 +739,7 @@ function StartFastPollingSchedule(self: ResiStudioInstance, scheduleId: string):
 		retryCount++
 		await GetSchedule(self, schedule)
 
-		if (
-			(schedule.destinations?.length ?? 0) > 0 &&
-			schedule.destinations?.every((d) => d.status === 'STARTED')
-		) {
+		if ((schedule.destinations?.length ?? 0) > 0 && schedule.destinations?.every((d) => d.status === 'STARTED')) {
 			self.log('info', `Schedule ${scheduleId} fully started. Stopping fast polling.`)
 			delete self.FAST_POLLING[scheduleId]
 			return

@@ -47,7 +47,9 @@ export function UpdateFeedbacks(self: ResiStudioInstance): void {
 				(s) => s.encoderId === encoderId && s.destinationGroupId === destinationGroupId,
 			)
 			if (schedule) {
-				const allDestinationsStarted = schedule.destinations?.every((destination) => destination.status === feedback.options.state)
+				const allDestinationsStarted = schedule.destinations?.every(
+					(destination) => destination.status === feedback.options.state,
+				)
 				return allDestinationsStarted ?? false
 			}
 			// If encoder not found, return false
