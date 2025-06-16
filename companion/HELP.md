@@ -1,6 +1,6 @@
 # Resi Studio
 
-This module will communicate with Resi Studio, allowing you to control encoders and see other device status.
+This module will communicate with Resi Studio.
 
 ## Configuration
 
