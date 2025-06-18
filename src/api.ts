@@ -240,6 +240,9 @@ async function GetDestinationGroups(self: ResiStudioInstance): Promise<void> {
 			self.updateStatus(InstanceStatus.UnknownWarning, 'No destination groups found')
 			self.CHOICES_DESTINATION_GROUPS = [{ id: 'default', label: 'Default Destination Group' }]
 			return
+		} else {
+			//we are ok
+			self.updateStatus(InstanceStatus.Ok)
 		}
 
 		self.CHOICES_DESTINATION_GROUPS = destinationsData.map((group) => ({
@@ -385,6 +388,9 @@ export async function GoLive(
 			AddEncoderError(self, encoderId, errorMessage)
 			self.updateStatus(InstanceStatus.UnknownWarning, errorMessage)
 			return
+		} else {
+			//we are ok
+			self.updateStatus(InstanceStatus.Ok)
 		}
 
 		ClearEncoderError(self, encoderId)
@@ -455,7 +461,7 @@ export async function StopLive(self: ResiStudioInstance, encoderId: string, dest
 			self.log('error', errorMessage)
 
 			AddEncoderError(self, encoderId, `Unable to Stop: No schedule found`)
-			self.updateStatus(InstanceStatus.UnknownWarning, errorMessage)
+			//self.updateStatus(InstanceStatus.UnknownWarning, errorMessage)
 			return
 		}
 
@@ -552,7 +558,7 @@ export async function GetSchedule(self: ResiStudioInstance, schedule: Schedule):
 				self.log('error', `Failed to fetch schedules: ${response.statusText}`)
 			}
 
-			self.updateStatus(InstanceStatus.UnknownWarning, 'Failed to fetch schedules - see log for details')
+			//self.updateStatus(InstanceStatus.UnknownWarning, 'Failed to fetch schedules - see log for details')
 			return
 		}
 

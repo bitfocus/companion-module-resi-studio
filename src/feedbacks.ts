@@ -5,7 +5,7 @@ export function UpdateFeedbacks(self: ResiStudioInstance): void {
 	const feedbacks: CompanionFeedbackDefinitions = {}
 
 	feedbacks.destinationStatus = {
-		name: 'Show Go Live Status for All Destinations',
+		name: 'Show Go Live Status for Selected Type of Destination Group on Encoder',
 		description: 'If all destinations for the encoder match the selected state, show the feedback',
 		type: 'boolean',
 		options: [
@@ -25,14 +25,30 @@ export function UpdateFeedbacks(self: ResiStudioInstance): void {
 			},
 			{
 				type: 'dropdown',
+				label: 'Type',
+				id: 'type',
+				default: 'YOUTUBE',
+				choices: [
+					{ id: 'EMBED', label: 'Embed' },
+					{ id: 'FACEBOOK', label: 'Facebook' },
+					{ id: 'RTMP', label: 'RTMP' },
+					{ id: 'YOUTUBE', label: 'YouTube' },
+				],
+			},
+			{
+				type: 'dropdown',
 				label: 'State',
 				id: 'state',
 				default: 'STARTED',
 				choices: [
+					{ id: 'IDLE', label: 'Idle' },
 					{ id: 'SET_UP', label: 'Setting Up' },
 					{ id: 'STARTING', label: 'Starting' },
 					{ id: 'STARTED', label: 'Started' },
+					{ id: 'STOPPING', label: 'Stopping' },
+					{ id: 'STOPPED', label: 'Stopped' },
 					{ id: 'ABORTED', label: 'Aborted' },
+					{ id: 'ERROR', label: 'Error' },
 				],
 			},
 		],
@@ -47,10 +63,20 @@ export function UpdateFeedbacks(self: ResiStudioInstance): void {
 				(s) => s.encoderId === encoderId && s.destinationGroupId === destinationGroupId,
 			)
 			if (schedule) {
-				const allDestinationsStarted = schedule.destinations?.every(
+				/*const allDestinationsStarted = schedule.destinations?.every(
 					(destination) => destination.status === feedback.options.state,
 				)
-				return allDestinationsStarted ?? false
+				return allDestinationsStarted ?? false*/
+
+				//get the destinations that match the selected type
+				const matchingDestinations = schedule.destinations?.filter(
+					(destination) => destination.type === feedback.options.type,
+				)
+				//check if all the matching destinations match the selected state
+				const allMatchingDestinationsInState = matchingDestinations?.every(
+					(destination) => destination.status === feedback.options.state,
+				)
+				return allMatchingDestinationsInState ?? false
 			}
 			// If encoder not found, return false
 			return false

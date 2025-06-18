@@ -14,7 +14,7 @@ This module will communicate with Resi Studio.
 
 ## Feedbacks
 
-- Show Go Live Status for All Destinations
+- Show Go Live Status for Selected Type of Destination Group on Encoder
 - Show Encoder Error Notification
 
 ## Variables
