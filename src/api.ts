@@ -520,7 +520,7 @@ export async function StopLive(self: ResiStudioInstance, encoderId: string, dest
 
 // --- Fetch Schedule ---
 
-export async function GetSchedule(self: ResiStudioInstance, schedule: Schedule): Promise<void> {
+export async function GetSchedule(self: ResiStudioInstance, schedule: Schedule, tries?: number): Promise<void> {
 	if (await !CheckTokenExpiry(self)) return
 	try {
 		const scheduleId = schedule.scheduleId
@@ -550,9 +550,23 @@ export async function GetSchedule(self: ResiStudioInstance, schedule: Schedule):
 		if (!response.ok) {
 			// Handle specific error codes
 			if (response.status === 404) {
-				self.log('error', `Schedule not found for Schedule Id ${scheduleId} - Does the Encoder have an input?`)
-				//remove this schedule from the array as it is not valid anyway
-				self.SCHEDULE_IDS = self.SCHEDULE_IDS.filter((s) => s.scheduleId !== scheduleId)
+				self.log('debug', `Schedule not found for Schedule Id ${scheduleId} - Does the Encoder have an input?`)
+				//try again after 5 seconds, but if we have tried 3 times, give up
+				if (tries && tries >= 3) {
+					self.log('error', `Schedule not found for Schedule Id ${scheduleId} after 3 attempts`)
+					self.updateStatus(
+						InstanceStatus.UnknownWarning,
+						`Schedule not found for Schedule Id ${scheduleId} after 3 attempts. This Schedule Id will be removed from the list.`,
+					)
+					//remove this schedule from the array as it is not valid anyway
+					self.SCHEDULE_IDS = self.SCHEDULE_IDS.filter((s) => s.scheduleId !== scheduleId)
+					self.config.SCHEDULE_IDS = self.SCHEDULE_IDS
+					self.saveConfig(self.config)
+					return
+				}
+				setTimeout(() => {
+					GetSchedule(self, schedule, (tries || 0) + 1)
+				}, 5000)
 				return
 			} else {
 				self.log('error', `Failed to fetch schedules: ${response.statusText}`)
